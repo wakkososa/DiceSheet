@@ -6,20 +6,20 @@ rules engine (vendored from upstream `develop`), so sheets calculate the same
 way, without Meteor or MongoDB.
 
 Licensed GPL-3.0, derived from [DiceCloud](https://github.com/ThaumRystra/DiceCloud).
+DiceSheet is an independent project and isn't affiliated with DiceCloud.
 
 ## What you get
 
 - **One small container.** A ~2.6 MB app plus Node; one SQLite file holds everything.
   About 80 MB of memory idle, ~200–250 MB in use.
-- **Your libraries, kept up to date.** Admin → Libraries → **Update all libraries**
-  downloads the latest version of each library from dicecloud.com (public libraries, no
-  login needed), keeping library and entry IDs so characters stay linked. Add more by
-  pasting a dicecloud.com library link, or a whole collection by its `library-collection`
-  link (dicecloud.com needs your login for that; it's used once, never saved). You can also
-  upload a `mongoexport` `.tgz` or JSON. Collections can be edited on the same page.
+- **Libraries from export files.** Admin → Libraries → **Import libraries** takes a
+  DiceCloud library export: the `.tgz` made with `mongoexport`, or `.json`/`.jsonl` files.
+  Library and entry IDs are kept, so characters stay linked. DiceSheet never downloads or
+  updates libraries on its own; to update one, import a newer export of it. Collections
+  in the file come along and can be edited on the same page.
 - **Character files both ways.** Import any DiceCloud character archive (schema v1–v3).
-  Export as this app's format, or **"for DiceCloud.com"** (schema v2), which your
-  current DiceCloud server and dicecloud.com can restore.
+  Export as this app's format, or **"for DiceCloud.com"** (schema v2), which a
+  DiceCloud server and dicecloud.com can restore.
 - **Requirements that work.** Slot and level-up requirements (e.g. `showPHB2024`,
   `strength.value >= 13`) are checked against the fully calculated character, with the
   reason shown for anything unavailable. Unmet requirements block adding, unless you
@@ -28,7 +28,7 @@ Licensed GPL-3.0, derived from [DiceCloud](https://github.com/ThaumRystra/DiceCl
 - **DiceCloud's action engine.** Attack / Use / Cast run DiceCloud's own action engine:
   to-hit and damage rolls, uses and resources spent, spell slots, buffs, adjustments and
   triggers, with a prompt when an action needs a choice or advantage. Library setup steps
-  (like LoV's "Assign Stats" for Standard Array) appear as a "finish setting up" panel.
+  (like a "Standard Array" stat assignment) appear as a "finish setting up" panel.
 - **Faster at the table.** HP bar with one-field Damage / Heal / Temp (temp HP absorb
   damage first), short and long rests (with rest triggers), quick roll buttons, uses and
   spell slots as pips, roll log in the Journal.
@@ -38,9 +38,11 @@ Licensed GPL-3.0, derived from [DiceCloud](https://github.com/ThaumRystra/DiceCl
   "Custom" folder on the character and export with it.
 - **Optional choices stay optional.** Slots DiceCloud marks as optional (e.g. Tutorial)
   don't count as choices to make, and any slot can be skipped.
+- **Character folders and printing.** Sort characters into folders, and print any sheet
+  (or save it as a PDF) on a two-page layout modeled on the 2024 character sheet.
 - **Admin dashboard.** Open/close registration, add users, reset passwords,
   disable/delete, promote admins, character limit per user from **1 to 999**
-  (there is no "unlimited"), default limit, rename library collections.
+  (there is no "unlimited"), default limit, rename library collections, and a live log.
 - **Plain username + password.** No Google/Patreon/Discord, no tabletop.
 
 ## Deploy with Docker
@@ -48,10 +50,9 @@ Licensed GPL-3.0, derived from [DiceCloud](https://github.com/ThaumRystra/DiceCl
 On the machine that runs Docker:
 
 ```sh
-# 1. Copy the zip over and unpack it (run scp on your PC)
-scp dicesheet-0.1.15.zip root@<server-ip>:/root/
-ssh root@<server-ip>
-cd /root && apt-get install -y unzip >/dev/null 2>&1; unzip -o dicesheet-0.1.15.zip && cd dicesheet
+# 1. Get the code (or download the source zip from the Releases page and unzip it)
+git clone https://github.com/<your-github-user>/dicesheet.git
+cd dicesheet
 
 # 2. Build and start (first build takes a few minutes)
 docker compose up -d --build
@@ -65,13 +66,16 @@ Open **http://<server-ip>:3100** and create your admin account with the setup co
 - To use a different port, change `"3100:3000"` in `docker-compose.yml` (the left number).
 - Find the server's IP with `hostname -I`.
 - If a firewall is on: `ufw allow 3100/tcp`.
+- Set `TZ` in `docker-compose.yml` to your time zone (used for log times).
 - Plain `http://IP:port` is fine on your home network. Don't forward that port on your
-  router to the internet; use the tunnel below for public access (it adds HTTPS).
+  router to the internet; for public access put it behind something that adds HTTPS, such
+  as a Cloudflare Tunnel or a reverse proxy. With Cloudflare, also set
+  `TRUST_PROXY: cloudflare` so sign-in rate limits see the real visitor IP.
 
 ### Updating to a new version
 
 ```sh
-cd /root/dicesheet && docker compose up -d --build     # your data in ./data is kept
+cd dicesheet && git pull && docker compose up -d --build     # your data in ./data is kept
 ```
 
 ### First steps in the app
@@ -79,13 +83,21 @@ cd /root/dicesheet && docker compose up -d --build     # your data in ./data is 
 1. Open the site. It asks for the **setup code** from `docker logs dicesheet`, and
    you create your admin account. (Or set `ADMIN_USERNAME` / `ADMIN_PASSWORD` in
    docker-compose.yml before the first start.)
-2. **Admin → Libraries → Choose file**: upload `dicecloud-libraries.tgz`.
-3. **Check the collection names.** In your export they are swapped: "Libraries Of Vexus
-   (5e2014)" contains the 2024 libraries and "(5e2024)" the 2014 ones. Rename them there.
+2. **Admin → Libraries → Import libraries → Choose file**: upload your library export.
+3. **Check the collections** on the same page. They're shown with their libraries, so you
+   can rename them or change what they contain.
 4. **Admin → Registration and limits**: registration starts **closed**. Set the default
    character limit (DiceCloud's default is 5).
-5. Move characters over: in your current DiceCloud, archive/download each character,
-   then here use **Import character file**.
+5. Move characters over: in DiceCloud, archive/download each character, then here use
+   **Import character file**.
+
+### Libraries
+
+DiceSheet doesn't include any libraries and doesn't fetch them from anywhere. You bring
+your own export from a DiceCloud server you run or have access to. Importing a library
+that's already there replaces it, keeping its IDs: characters keep what they already took
+from it, and the new content is offered for later choices and level-ups. Removing a library
+doesn't change existing characters either.
 
 ### Character folders
 
@@ -103,49 +115,79 @@ Anything that doesn't fit, plus the full text of every feature (optional), conti
 pages. Print it, or choose **Save as PDF** in the print dialog. The PDF is made by your browser,
 so the server stays small.
 
-### Checking dicecloud.com compatibility
+### Serving DiceSheet from another address
 
-`test/dicecloud-export.mjs` exports every character for dicecloud.com and runs each file through
-DiceCloud master's own import checks and engine (needs a DiceCloud master checkout; see the
-header of `harness/build-master.mjs`).
+DiceSheet only accepts sign-ins and changes from the address it's opened on. If it's also served
+through another address (a Cloudflare Worker, a second domain), sign-in there fails with
+"Cross-origin request blocked". Add that address under **Admin → Registration and limits →
+Other addresses**, or set `ALLOWED_ORIGINS` (comma-separated) in `docker-compose.yml`:
 
-### Updating libraries
-
-Admin → Libraries → **Update all libraries**. It takes a few minutes (it paces its requests
-to stay under dicecloud.com's rate limit) and you can leave the page while it runs. A library
-is only replaced once it has downloaded completely. Characters keep what they already have;
-updated content is offered for new choices and level-ups. From the shell:
-
-```sh
-docker exec dicesheet node main.js sync-libraries https://dicecloud.com
-# a whole collection (reads {"user": "...", "password": "..."} from stdin):
-echo '{"user":"you@example.com","password":"..."}' | docker exec -i dicesheet \
-  node main.js sync-libraries https://dicecloud.com --collection jp6xTaHDZK4ELYzvN --login-stdin
+```
+https://dicesheet.yourname.workers.dev
+https://*.yourdomain.com           # every subdomain of a domain you own
 ```
 
-Adding a collection by link needs a DiceCloud.com account with an email or username and
-password (DiceCloud only shows collections to logged-in users). The login goes straight to
-DiceCloud.com for that download and isn't stored. The collection keeps its DiceCloud ID.
+Wildcards on shared hosts (`*.workers.dev`, `*.pages.dev`…) are refused, because anyone can
+create addresses there.
+
+### Logs
+
+**Admin → Logs** shows the server's log live: sign-ins (and failed attempts), admin changes,
+library imports, warnings and errors, with filters, search and download. The same lines go to
+`docker logs dicesheet`.
+
+### Backups
+
+Everything lives in `./data/dicesheet.db`. To take a safe copy while it runs:
+
+```sh
+docker exec dicesheet node main.js backup /data/backup.db
+```
 
 ### Command line
 
 ```sh
-docker exec dicesheet node main.js import-libraries /data/dicecloud-libraries.tgz
+docker exec dicesheet node main.js import-libraries /data/<your-library-export>.tgz
 docker exec dicesheet node main.js create-admin <username> <password>
 docker exec dicesheet node main.js set-registration open|closed
+docker exec dicesheet node main.js backup /data/backup.db
 ```
 
 ## Security
 
 - Passwords hashed with scrypt; sessions are random tokens stored hashed, in
-  HttpOnly, SameSite=Lax cookies (Secure behind Cloudflare), 30-day sliding expiry.
+  HttpOnly, SameSite=Lax cookies (Secure behind HTTPS), 30-day sliding expiry.
 - Login rate limit per IP (`CF-Connecting-IP` with `TRUST_PROXY=cloudflare`) and per
   username; same response time for unknown users.
-- Every state-changing request needs a custom header and a same-origin `Origin`, and
-  no CORS is allowed, which blocks cross-site request forgery.
+- Every state-changing request needs a custom header and an `Origin` that is either the
+  site itself or one of the admin-approved other addresses, which blocks cross-site request
+  forgery. CORS is only sent to those approved addresses.
 - Strict Content-Security-Policy; rules text is sanitized before display.
 - Characters are private to their owner (and admins). The first admin needs the setup
   code from the server log, so nobody can claim a fresh public instance.
+
+## Not yet included
+
+- **Targeting other creatures.** Actions run on your own character; damage to a target is
+  rolled and logged, and you apply it to the other sheet by hand.
+- The full per-type **property editor**. You can edit names, text and every formula,
+  remove, restore and add notes, but there's no form yet for creating any property type.
+- Sharing characters with other users, and editing libraries in the app (edit them in
+  DiceCloud and import a new export).
+
+## Development
+
+```sh
+npm install
+npm run build                      # server -> dist/main.js, web -> dist/web
+DATA_DIR=./data npm start          # http://localhost:3000
+npm run dev:web                    # UI dev server
+node test/folders.mjs http://localhost:3000 <admin> <password>   # also test/logs.mjs, test/origins.mjs
+```
+
+Layout: `vendor/imports` = DiceCloud source (edits listed in `PATCHES.md`),
+`shim/` = Meteor stand-ins, `src/engine` = engine API, `src/server` = HTTP + SQLite,
+`web/` = Vue 3 UI.
 
 ## Quick comment
 
