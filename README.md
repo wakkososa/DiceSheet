@@ -166,15 +166,6 @@ docker exec dicesheet node main.js backup /data/backup.db
 - Characters are private to their owner (and admins). The first admin needs the setup
   code from the server log, so nobody can claim a fresh public instance.
 
-## Not yet included
-
-- **Targeting other creatures.** Actions run on your own character; damage to a target is
-  rolled and logged, and you apply it to the other sheet by hand.
-- The full per-type **property editor**. You can edit names, text and every formula,
-  remove, restore and add notes, but there's no form yet for creating any property type.
-- Sharing characters with other users, and editing libraries in the app (edit them in
-  DiceCloud and import a new export).
-
 ## Development
 
 ```sh
