@@ -1,0 +1,23 @@
+# DiceSheet: runs alongside your existing DiceCloud, on its own port and data volume.
+# Open it at http://<server-ip>:3100
+services:
+  dicesheet:
+    build: .
+    image: dicesheet:local
+    container_name: dicesheet
+    restart: unless-stopped
+    environment:
+      TZ: America/Los_Angeles
+      # Other addresses DiceSheet is served from, e.g. a Cloudflare Worker (also editable on the Admin page)
+      # ALLOWED_ORIGINS: "https://dicesheet.yourname.workers.dev"
+      # Optional: create the admin on first start instead of using the setup code from the log
+      # ADMIN_USERNAME: yourname
+      # ADMIN_PASSWORD: change-me-to-something-long
+      #
+      # Only if you later put it behind a Cloudflare Tunnel (see README):
+      # TRUST_PROXY: cloudflare
+    volumes:
+      - ./data:/data
+    ports:
+      # host-port:container-port. Change 3100 if that port is taken.
+      - "3100:3000"

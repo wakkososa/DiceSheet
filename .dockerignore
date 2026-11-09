@@ -1,0 +1,8 @@
+node_modules
+dist
+data
+harness/out
+test
+*.db
+*.db-*
+.git
