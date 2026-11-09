@@ -45,7 +45,7 @@ Licensed GPL-3.0, derived from [DiceCloud](https://github.com/ThaumRystra/DiceCl
 
 ## Deploy with Docker
 
-On the machine that runs Docker (e.g. your Proxmox container):
+On the machine that runs Docker:
 
 ```sh
 # 1. Copy the zip over and unpack it (run scp on your PC)
